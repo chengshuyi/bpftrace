@@ -87,7 +87,7 @@ public:
   bool has_module_btf();
 
   std::string report(void);
-
+ 
   DEFINE_MAP_TEST(array, libbpf::BPF_MAP_TYPE_ARRAY);
   DEFINE_MAP_TEST(hash, libbpf::BPF_MAP_TYPE_HASH);
   DEFINE_MAP_TEST(percpu_array, libbpf::BPF_MAP_TYPE_PERCPU_ARRAY);
