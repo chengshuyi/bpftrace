@@ -108,6 +108,7 @@ public:
   bool is_internal = false;
   bool is_tparg = false;
   bool is_funcarg = false;
+  bool is_ptr2btftype = false;
   int funcarg_idx = -1;
 
 private:
@@ -134,6 +135,7 @@ private:
             is_internal,
             is_tparg,
             is_funcarg,
+            is_ptr2btftype,
             funcarg_idx,
             size_,
             is_signed_,

@@ -1846,6 +1846,7 @@ void CodegenLLVM::visit(FieldAccess &acc)
   bool is_tparg = type.is_tparg;
   bool is_internal = type.is_internal;
   bool is_funcarg = type.is_funcarg;
+  bool is_ptr2btftype = type.is_ptr2btftype;
   assert(type.IsRecordTy() || type.IsTupleTy());
 
   if (type.is_funcarg)
@@ -1887,6 +1888,7 @@ void CodegenLLVM::visit(FieldAccess &acc)
   type.is_tparg = is_tparg;
   type.is_internal = is_internal;
   type.is_funcarg = is_funcarg;
+  type.is_ptr2btftype = is_ptr2btftype;
   // Restore the addrspace info
   // struct MyStruct { const int* a; };  $s = (struct MyStruct *)arg0;  $s->a
   type.SetAS(addrspace);
@@ -3524,7 +3526,14 @@ void CodegenLLVM::probereadDatastructElem(Value *src_data,
   {
     // Read data onto stack
     AllocaInst *dst = b_.CreateAllocaBPF(elem_type, temp_name);
-    b_.CreateProbeRead(ctx_, dst, elem_type, src, loc, data_type.GetAS());
+    if (elem_type.IsStringTy() && data_type.is_ptr2btftype)
+    {
+      b_.CREATE_MEMCPY(dst, src, elem_type.GetSize(), 1);
+    }
+    else
+    {
+      b_.CreateProbeRead(ctx_, dst, elem_type, src, loc, data_type.GetAS());
+    }
     expr_ = dst;
     expr_deleter_ = [this, dst]() { b_.CreateLifetimeEnd(dst); };
   }
@@ -3560,6 +3569,14 @@ void CodegenLLVM::probereadDatastructElem(Value *src_data,
 
         b_.SetInsertPoint(pred_true_block);
       }
+    }
+    else if (data_type.is_ptr2btftype)
+    {
+      expr_ = b_.CreateDatastructElemLoad(
+          elem_type,
+          b_.CreateIntToPtr(src, dst_type->getPointerTo()),
+          true,
+          data_type.GetAS());
     }
     else
     {
